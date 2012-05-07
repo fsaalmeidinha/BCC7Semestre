@@ -16,37 +16,32 @@ program ola_1
         real(kind=r8),dimension(1:n,1:n)::a,b,c
 
         !$omp parallel
-        !$omp do
+        !$omp do schedule(dynamic)
             do i=1,sizeRandom
 		call random_number( vetorPesos(i) )
+            enddo
+        !$omp end do
+
+	!$omp do schedule(dynamic)
+            do i=1,n
+		do j=1,n
+			call random_number( a(i,j) )
+			call random_number( b(i,j) )
+            	enddo
             enddo
         !$omp end do
         !$omp end parallel 
 	vetorPesos = vetorPesos*rangeRandom
 
-        write(*,*)"*******************************"
-        !write(*,*),vetorPesos !sqrt(soma),maxval(b)
-        write(*,*)"*******************************"
-	call work(p1,p2,vetorPesos(1),a,b,c,n)
-        !write(*,*)"*******************************"
-        !write(*,*),b !sqrt(soma),maxval(b)
-        !write(*,*)"*******************************"
-
-contains
-  subroutine work(p1,p2,peso,a,b,c,n)
-	integer::p1
-	integer::p2
-	real::peso
-	real(kind=r8),dimension(:,:)::a,b,c
-	integer::n
-
 	!$omp parallel
-        !$omp do
+        !$omp do schedule(dynamic)
 		do i=1,p1
 
 			do j=1,p2
 
-				
+				do k=1,sizeRandom
+					call work(vetorPesos(k),a,b,c,n)
+				enddo
 
 			enddo
 
@@ -54,6 +49,27 @@ contains
         !$omp end do
         !$omp end parallel 
 
+        write(*,*),c
+        
+
+contains
+  subroutine work(peso,a,b,c,n)
+	real::peso
+	real(kind=r8),dimension(:,:)::a,b,c
+	integer::n
+
+	c=0
+	do i=1,n
+
+		do j=1,n
+
+			do k=1,n
+				c(i,j) = c(i,j) + (a(i,k) * b(k,j))
+			enddo
+
+		enddo
+
+	enddo
 
     return
   end subroutine work
