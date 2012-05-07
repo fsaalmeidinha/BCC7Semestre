@@ -1,0 +1,4 @@
+Verificar permissoes:
+ls - lha
+Alterar permissoes necessarias: (0 = nada, 5 = leitura, 7 = escrita/leitura)
+chmod 777 .
