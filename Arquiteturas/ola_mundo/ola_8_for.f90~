@@ -3,24 +3,11 @@ program ola_8_for
         implicit none
         integer,parameter::r8=kind(1.0d0)
         integer,parameter::n=16
-        !!!integer::i
-        !!!real(kind=r8)::temp,soma
-!Matrizes de multiplicacao
+        integer::i
+        real(kind=r8)::temp,soma
         real(kind=r8),dimension(1:n,1:n)::a,b,c
-        
-!Seta os vetores de peso
-	!$omp parallel
-        !$omp do
-            do i=1,n
-               temp=a(i)*a(i)
-               b(i)=temp
-               !$ write(*,*)"threads",omp_get_thread_num()
-            enddo
-        !$omp end do
-        !$omp end parallel 
-
-
-
+        a=3.0_r8
+        b=0.0_r8
         !$omp parallel
         !$omp do
             do i=1,n
