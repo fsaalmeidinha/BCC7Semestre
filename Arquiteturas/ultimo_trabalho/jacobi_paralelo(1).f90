@@ -1,0 +1,180 @@
+﻿program jacobi_paralelo
+
+implicit none
+
+include 'mpif.h'
+  
+integer, parameter :: r8 = kind(1.0d0)
+  
+integer, parameter :: maxiter=40000
+  
+real(kind=r8)::pi=4.0d0*atan(1.0_r8)
+ 
+real(kind=r8), dimension(:,:), allocatable:: v 
+  
+real(kind=r8), dimension(:,:), allocatable:: vold 
+  
+real(kind=r8) :: start_time, end_time
+  
+real(kind=r8) :: tol,erro,gerro
+  
+integer ::n,i,m,mp,abaixo,acima,j
+  
+integer ::k,p,ierr
+  
+call mpi_init(ierr)
+call mpi_comm_rank(mpi_comm_world, k, ierr)    
+  
+call mpi_comm_size(mpi_comm_world, p, ierr)   
+  
+	if(k==0) then
+
+		write(*,*)"Entre com o numero de partições n="
+     read(*,*)n
+  
+	endif
+  
+call mpi_bcast(n,1,mpi_integer,0,mpi_comm_world,ierr)
+
+m=n+1
+  
+mp=n/p
+  
+tol=0.0000000001
+  
+allocate(   v(0:m,0:mp+1))
+  
+allocate(vold(0:m,0:mp+1))
+  
+call cf(v,m,mp,k,p)
+  
+call vizinho(k,abaixo,acima,p)
+  
+i=0
+ do
+       vold=v
+       
+call nucleo_jacobi(v,m,mp+1)
+
+erro=maxval(dabs(v-vold))
+       
+call mpi_allreduce(erro,gerro,1,mpi_double_precision,mpi_max,  &
+                mpi_comm_world,ierr )
+       if((gerro.le.tol).or.(i.ge.maxiter)) exit
+       i=i+1
+       if (k==0) then         
+       if(mod(i,10)==0) write(*,"('k,iter,gerro:',i4,i6,e12.4)"),k,i,gerro 
+       endif
+       call atualiza_cf(v, m, mp, k, abaixo, acima)
+  enddo
+! call print_mesh(v,m,mp,k)
+  call u_exata(v,m,mp+1,k)
+  call escreve_u(v,m,mp+1,k)
+  deallocate(v)
+  deallocate(vold)
+  call mpi_finalize(ierr)
+contains
+  !
+  subroutine nucleo_jacobi(uo,n,m)
+    implicit none
+    integer::i,j,n,m
+    real(kind=r8),dimension(0:n,0:m)::uo,un
+    do i=1,n-1
+       do j=1,m-1
+          un(i,j)=0.25_r8*(uo(i-1,j)+uo(i,j-1)+uo(i+1,j)+uo(i,j+1))
+       enddo
+    enddo
+    uo(1:n-1,1:m-1)=un(1:n-1,1:m-1)
+    return
+  end subroutine nucleo_jacobi
+  !
+  subroutine cf(v,m,mp,k,p)
+    implicit none
+    integer::i,j,m,k,mp,p
+    real(kind=r8),dimension(0:m,0:mp+1)::v
+    real(kind=r8),dimension(0:m       )::y0
+    y0 = sin(pi*(/(j,j=0,m)/)/m)
+    if(p > 1) then
+       v(0,:)=0.0_r8
+       v(m,:)=0.0_r8
+       call random_number(v(1:m-1,0:mp+1))
+       if (k == 0  ) v(:,   0) = y0
+       if (k == p-1) v(:,mp+1) = y0*exp(-pi)
+    else
+       v(0,:)=0.0_r8
+       v(m,:)=0.0_r8
+       call random_number(v(1:m-1,1:mp))
+       v(:,0) = y0
+       v(:,mp+1) = y0*exp(-pi)
+    endif
+    return
+  end subroutine cf
+  !
+  subroutine escreve_u(u,n,m,k)
+    implicit none
+    integer::n,m,i,j,k,saida
+    real(kind=r8),dimension(0:n,0:m)::u
+    saida=20
+    do i=0,n
+       do j=0,m
+          write(saida+k,*)i,j+k*(m-1),u(i,j)
+       enddo
+       write(saida+k,*)
+    enddo
+    return 
+  end subroutine escreve_u
+  !
+  subroutine u_exata(u,n,m,k)
+    implicit none
+    integer::n,i,j,m,k
+    real(kind=r8)                   ::h,aux
+    real(kind=r8),dimension(0:n,0:m)::u
+    h=1.0_r8/n
+    do i=0,n
+       do j=0,m
+          aux=sin(pi*i*h)*exp(-pi*(j+k*(m-1))*h)
+          u(i,j)=abs(u(i,j)-aux)
+       enddo
+    enddo
+    return 
+  end subroutine u_exata
+  !
+  subroutine vizinho(k,abaixo,acima,p)
+    implicit none
+    integer::k,abaixo,acima,p
+    if(k==0) then
+       abaixo= -1
+       acima = k+1
+    elseif(k==p-1) then
+       abaixo= k-1
+       acima = -1
+    else
+       abaixo=k-1
+       acima =k+1
+    endif
+  end subroutine vizinho
+  !
+  subroutine atualiza_cf(v, m, mp, k, abaixo, acima)
+    implicit none
+    integer :: m, mp, k, ierr, abaixo, acima,j
+    real(kind=r8), dimension(0:m,0:mp+1) :: v
+    integer status(mpi_status_size)
+    if(p>1) then
+    if(k.lt.p-1)then
+    call mpi_send( v(0:m,mp), m+1, mpi_double_precision, acima, 0,  &
+               mpi_comm_world, ierr)
+    call mpi_recv( v(0:m,mp+1), m+1 , mpi_double_precision, acima, 1,  &
+              mpi_comm_world, status, ierr)
+    endif
+    if(k.gt.0)then
+    call mpi_recv( v(0:m,0), m+1, mpi_double_precision, abaixo, 0,  &
+             mpi_comm_world, status, ierr)
+    call mpi_send( v(0:m,1  ), m+1, mpi_double_precision, abaixo, 1,  &
+            mpi_comm_world, ierr)
+    endif
+    endif
+    return
+    end subroutine atualiza_cf
+
+  !
+END PROGRAM Jacobi_paralelo
