@@ -42,8 +42,10 @@ mp=n/p
 iter=0
  do
   call sor_red_black(uo,m,mp+1)
-!if(k==1) write(*,*)"uo: ",uo(1,1)
+if(k==1) write(*,*)"uo: ",uo
 
+!write(*,*),"uo-ue",uo-ue
+!call sleep(1)
 erro=maxval(dabs(uo-ue))
 !write(*,*) "uo: ",uo(1,5),"uo: ",uo(2,5),"uo: ",uo(3,4),"uo: ",uo(3,3)
 call mpi_allreduce(erro,gerro,1,mpi_double_precision,mpi_max,  &
@@ -130,18 +132,18 @@ contains
   u(n,0:n)=0.0_r8
 
 if(p == 1) then
-  do i=0,n
+  do i=0,m
         u(i,0)=sin(pi*i*h)
         u(i,n)=sin(pi*i*h)*exp(-pi)
   enddo
 else
 	if (k == 0) then
-		do i=0,n
+		do i=0,m
 			u(i,0)=sin(pi*i*h)
 		enddo
 	endif
 	if (k == p-1) then
-		do i=0,n
+		do i=0,m
 			u(i,n)=sin(pi*i*h)*exp(-pi)
 		enddo
 	endif
@@ -155,7 +157,7 @@ endif
   integer::n,mp
   real(kind=r8),dimension(0:mp,0:n+1)::u
   u=0.0_r8
-  call random_number(u(1:mp-1,0:n+1))
+  call random_number(u(0:mp,1:n))
 
   return 
   end subroutine est_inic

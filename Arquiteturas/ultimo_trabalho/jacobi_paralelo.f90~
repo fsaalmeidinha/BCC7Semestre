@@ -98,8 +98,8 @@ contains
        v(0,:)=0.0_r8
        v(m,:)=0.0_r8
        call random_number(v(1:m-1,0:mp+1))
-       if (k == 0  ) v(:,   0) = y0
-       if (k == p-1) v(:,mp+1) = y0*exp(-pi)
+       if (k == 0  ) v(0:m,   0) = y0
+       if (k == p-1) v(0:m,mp+1) = y0*exp(-pi)
     else
        v(0,:)=0.0_r8
        v(m,:)=0.0_r8
