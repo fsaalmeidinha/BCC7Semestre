@@ -6,8 +6,7 @@ Program sor_red_black_serial
   real(kind=r8)::pi=4.0d0*atan(1.0_r8)
   real(kind=r8), dimension(:,:), allocatable:: un
   real(kind=r8), dimension(:,:), allocatable:: uo  
-  real(kind=r8), dimension(:,:), allocatable:: ue 
-  real(kind=r8), dimension(:,:), allocatable:: er 
+  real(kind=r8), dimension(:,:), allocatable:: ue
   real(kind=r8) :: start_time, end_time
   real(kind=r8) :: tol
   integer ::n,iter,m
@@ -17,10 +16,8 @@ Program sor_red_black_serial
   tol=0.0000000001
   allocate(uo(0:m,0:m))
   allocate(ue(0:m,0:m))
-  allocate(er(0:m,0:m))
   uo=0.0
   ue=0.0
-  er=0.0
   call est_inic(uo,m)
   call cond_front(uo,m)
   call u_exata(ue,m)
@@ -28,11 +25,9 @@ Program sor_red_black_serial
   call sor_red_black(uo,ue,m,tol)
   call cpu_time(end_time) 
   write(*,*)'Tempo total de CPU =',end_time - start_time
-  er=dabs(uo-ue)
   call escreve_u(uo,m)
   deallocate(uo)
   deallocate(ue)
-  deallocate(er)
 contains
   !
   subroutine sor_red_black(u,ue,n,tol)
@@ -41,7 +36,6 @@ contains
   real(kind=r8)::erro,tol,aux,omega,rho
   real(kind=r8),dimension(0:n,0:n)::u,ue,uo
   k=0
-  call cond_front(u,n)
   erro=maxval(dabs(uo-ue))
   write(19,*)k,erro
   write(*,*)k,erro
