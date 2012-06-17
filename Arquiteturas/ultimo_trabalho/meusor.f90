@@ -1,3 +1,5 @@
+!Felipe da Silva Almeida
+!Wagner Kenzo Nakamura
 Program sor_red_black_serial
 
   implicit none
@@ -42,10 +44,12 @@ mp=n/p
 iter=0
  do
   call sor_red_black(uo,m,mp+1)
-if(k==1) write(*,*)"uo: ",uo
+!if(k==1) write(*,*)"uo: ",uo
 
 !write(*,*),"uo-ue",uo-ue
 !call sleep(1)
+!write(*,*)(uo-ue)
+!call sleep(3)
 erro=maxval(dabs(uo-ue))
 !write(*,*) "uo: ",uo(1,5),"uo: ",uo(2,5),"uo: ",uo(3,4),"uo: ",uo(3,3)
 call mpi_allreduce(erro,gerro,1,mpi_double_precision,mpi_max,  &
@@ -57,8 +61,8 @@ call mpi_allreduce(erro,gerro,1,mpi_double_precision,mpi_max,  &
        if(mod(iter,10)==0) write(*,*)"iter:",iter," erro:" ,gerro
        endif
        call atualiza_cf(uo, m, mp, k, abaixo, acima)
- write(*,*),"erro:",erro," k:",k
-call sleep(1)
+ !write(*,*),"erro:",erro," k:",k
+!call sleep(1)
 enddo
 
 if(k==0) then
@@ -82,15 +86,6 @@ contains
 !  erro=maxval(dabs(uo-ue))
   rho=1-(0.5*pi/n)**2
 
-       if(k==0)then
-               omega=1.0_r8
-       elseif(k==1)then
-               omega=1.0_r8/(1.0_r8-0.5*rho**2)
-       elseif(k==2)then
-               omega=1.0_r8/(1.0_r8-0.25*omega*rho**2)
-       else
-               omega=1.0_r8/(1.0_r8-0.25*omega**rho**2)
-       endif
 !        uo=u
 
 !if(k==0) write(*,*)"uo:",uo(2,3)
@@ -107,6 +102,15 @@ contains
 !                        uo(i,j)=omega*aux+(1.0_r8-omega)*uo(i,j)
 !                enddo
 	k=k+1
+if(k==0)then
+               omega=1.0_r8
+       elseif(k==1)then
+               omega=1.0_r8/(1.0_r8-0.5*rho**2)
+       elseif(k==2)then
+               omega=1.0_r8/(1.0_r8-0.25*omega*rho**2)
+       else
+               omega=1.0_r8/(1.0_r8-0.25*omega**rho**2)
+       endif
         enddo
 !if(k==0) write(*,*)"uo:",uo(2,3)
 
